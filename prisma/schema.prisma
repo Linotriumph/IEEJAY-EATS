@@ -1,0 +1,125 @@
+// prisma/schema.prisma
+//
+// Database schema for IEEJAY EATS REST API.
+//
+// Resource relationships
+// ──────────────────────
+//   Restaurant  1 ──< MenuItem     (a restaurant has many menu items)
+//   Restaurant  1 ──< Order        (a restaurant fulfils many orders)
+//   Customer    1 ──< Order        (a customer places many orders)
+//   Order       1 ──< OrderItem    (an order contains many items)
+//   OrderItem  >── 1 MenuItem      (each order line references a menu item)
+//
+// Why UUIDs instead of sequential integers?
+// ─────────────────────────────────────────
+// Sequential integer IDs leak business information (record counts, growth
+// rate) and allow clients to trivially enumerate every resource by
+// incrementing the ID. UUIDs (v4) are randomly generated, opaque, and safe
+// to expose publicly. They also remain unique across shards / replicas if
+// the database is ever scaled horizontally.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  address     String
+  city        String
+  phone       String
+  cuisineType String
+  rating      Float    @default(0)
+  isOpen      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  menuItems   MenuItem[]
+  orders      Order[]
+
+  @@index([city])
+  @@index([cuisineType])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+model MenuItem {
+  id           String   @id @default(uuid())
+  restaurantId String
+  name         String
+  description  String
+  category     String
+  price        Float
+  isAvailable  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+
+  @@index([restaurantId])
+  @@index([category])
+  @@index([price])
+  @@index([isAvailable])
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  phone     String
+  address   String
+  createdAt DateTime @default(now())
+
+  orders    Order[]
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  customerId      String
+  restaurantId    String
+  status          OrderStatus @default(pending)
+  totalAmount     Float
+  deliveryAddress String
+  createdAt       DateTime    @default(now())
+
+  customer        Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  items           OrderItem[]
+
+  @@index([customerId])
+  @@index([restaurantId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  unitPrice  Float   // snapshot of price at time of order
+
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([menuItemId])
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  preparing
+  out_for_delivery
+  delivered
+  cancelled
+}
