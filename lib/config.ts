@@ -13,14 +13,6 @@
  * tuneable value in 30 seconds.
  */
 
-function requiredEnv(key: string, fallback?: string): string {
-  const value = process.env[key] ?? fallback;
-  if (value === undefined) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return value;
-}
-
 function intEnv(key: string, fallback: number): number {
   const raw = process.env[key];
   if (raw === undefined) return fallback;
@@ -30,9 +22,6 @@ function intEnv(key: string, fallback: number): number {
 }
 
 export const config = {
-  /** PostgreSQL connection string */
-  databaseUrl: requiredEnv("DATABASE_URL"),
-
   /** Pagination defaults – safe maximums enforced by all list handlers */
   pagination: {
     defaultLimit: intEnv("PAGINATION_DEFAULT_LIMIT", 20),

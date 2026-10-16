@@ -90,6 +90,20 @@ console.log(`   Target: ${BASE}\n`);
 
 async function runTests() {
 
+  // Preflight: this suite depends on seeded data
+  {
+    const { status, body } = await get("/restaurants?limit=1");
+    const b = body as Record<string, unknown>;
+    const data = (b.data as unknown[] | undefined) ?? [];
+    if (status !== 200 || data.length === 0) {
+      console.error(
+        `❌ Preflight failed (status ${status}): database appears empty or unreachable.` +
+        `\n   Seed it first: npm run seed\n`
+      );
+      process.exit(1);
+    }
+  }
+
   // ── Restaurants list ────────────────────────────────────────────────────────
   console.log("▶ Restaurants");
 
@@ -287,8 +301,8 @@ async function runTests() {
   if (!testMenuItemId) {
     const { body } = await get(`/restaurants/${firstRestaurantId}/menu?limit=1`);
     const b = body as Record<string, unknown>;
-    const data = b.data as Record<string, unknown>[];
-    testMenuItemId = data[0]?.id as string ?? "";
+    const data = (b.data as Record<string, unknown>[] | undefined) ?? [];
+    testMenuItemId = (data[0]?.id as string) ?? "";
   }
 
   await test("POST /orders creates an order (201)", async () => {

@@ -1,7 +1,7 @@
 /**
- * middleware.ts
+ * proxy.ts
  *
- * Next.js Edge Middleware — runs before every request.
+ * Next.js Proxy — runs before every request.
  *
  * Responsibility: Add CORS headers to all /api/* responses so the
  * frontend (potentially on a different subdomain) can call the API.
@@ -12,7 +12,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const response = NextResponse.next();
 
   // Allow any origin to call the public API
@@ -23,7 +23,7 @@ export function middleware(req: NextRequest) {
   return response;
 }
 
-// Only run this middleware on API routes
+// Only run this proxy on API routes
 export const config = {
   matcher: "/api/:path*",
 };

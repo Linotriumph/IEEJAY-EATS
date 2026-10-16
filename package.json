@@ -4,7 +4,7 @@
   "description": "REST API for IEEJAY EATS Nigerian restaurant",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "seed": "npx tsx prisma/seed.ts",
     "test": "npx tsx tests/api.test.ts",
